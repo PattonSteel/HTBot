@@ -23,30 +23,16 @@ class SetupCommand(commands.Cog):
             await interaction.response.defer(thinking=False)
             await interaction.channel.typing()
 
-            #Load server config JSON
-            with open('config.json','r') as file:
-                config = json.load(file)
+            channel_type = BotHelpers.channel_lookup(interaction.channel_id)
 
             #Check to see if the channel is already set up
-            exists = False
-            for channel in config["channels"]:
-                if config["channels"][f"{channel}"]["id"] == f"{interaction.channel_id}":
-                    exists = True
-                    channel_type = config["channels"][f"{channel}"]["type"]
-                    await interaction.channel.send(
-                        content=f"This channel is already designated as a {channel_type} channel.",
-                        delete_after=5)
-                    
-            if(exists == False):
-                #Record new channel information in JSON
-                new_channel_info = {
-                        "id": f"{interaction.channel_id}",
-                        "type": f"{option}",
-                        "count": 0
-                        }
-                config["channels"][f"{interaction.channel.name}"] = new_channel_info
-                with open('config.json','w') as file:
-                    json.dump(config,file,indent=4)
+            if channel_type != None:
+                await interaction.channel.send(
+                    content=f"This channel is already designated as a {channel_type} channel.",
+                    delete_after=5)  
+            else:
+                #Creates a new entry based off options selected
+                BotHelpers.channel_add(channel_id=interaction.channel_id,channel_name=interaction.channel.name,option=option)
 
             #Run the bumper for the channel depending on the type
             match f"{option}":
@@ -63,17 +49,17 @@ class SetupCommand(commands.Cog):
                     from ticket import ticket_bumper_view
                     ticket_view = ticket_bumper_view.TicketButtonView(self.bot)
                     support_embed = discord.Embed(title="Hollowtree Tickets",
-                                        description="",
-                                        colour=0x05ef69)
+                        description="",
+                        colour=0x05ef69)
                     support_embed.add_field(name="General Support",
-                                    value="If you need general support please click the `Contact Support` button,",
-                                    inline=False)
+                        value="If you need general support please click the `Contact Support` button,",
+                        inline=False)
                     support_embed.add_field(name="Punishment Appeals",
-                                    value="If you believe you've been wrongfully punished, please click the `Appeal Ban` button,",
-                                    inline=False)
+                        value="If you believe you've been wrongfully punished, please click the `Appeal Ban` button,",
+                        inline=False)
                     support_embed.add_field(name="Player / Staff Report",
-                                    value="In order to report a player or staff, select the `Report User` button below.",
-                                    inline=False)
+                        value="In order to report a player or staff, select the `Report User` button below.",
+                        inline=False)
 
                     ticket_message = await interaction.channel.send(view=ticket_view,embed=support_embed,silent=True)
                 
@@ -84,6 +70,7 @@ class SetupCommand(commands.Cog):
                     control_embed = await control.control_embed(self.bot)
                     from control import control_bumper_view
                     control_view = control_bumper_view.ControlButtonView(self.bot)
+                    
                     control_message = await interaction.channel.send(embed=control_embed, view=control_view,silent=True)
 
             #Deletes the thinking defer symbol

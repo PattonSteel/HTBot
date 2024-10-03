@@ -23,16 +23,9 @@ class CreateTicketModal(ui.Modal, title='Create Ticket'):
     async def on_submit(self,interaction:discord.Interaction):
         try:
             await interaction.response.defer(ephemeral=True,thinking=False)
-            #Open the setup JSON
-            with open('config.json','r') as file:
-                config = json.load(file)
-            #Find the current ticket number from the config, increment the counter
-            for channel in config["channels"]:
-                if config["channels"][f"{channel}"]["id"] == f"{interaction.channel_id}":
-                    ticket_id = int(config["channels"][f"{channel}"]["count"])
-                    config["channels"][f"{channel}"]["count"] = f"{ticket_id + 1}"
-            with open('config.json','w') as file:
-                json.dump(config,file,indent=4)
+
+            #Pull the current ticket count, increment by 1.
+            ticket_id = BotHelpers.channel_increment(interaction.channel.id)
 
             #Creation of the ticket embed
             embed = discord.Embed(title=f"Ticket #{ticket_id}",
@@ -45,25 +38,8 @@ class CreateTicketModal(ui.Modal, title='Create Ticket'):
             #Creation of the thread
             thread:discord.Thread = await interaction.channel.create_thread(name=f"Ticket #{ticket_id}",invitable=False)
 
-            #Load ticket json
-            with open('tickets.json','r') as ticketfile:
-                ticketlog = json.load(ticketfile)
             #Log new ticket
-            timestamp = datetime.datetime.now()
-            epoch = round(timestamp.timestamp())
-            new_ticket_info = {
-                        "thread_id": f"{thread.id}",
-                        "user_id": f"{interaction.user.id}",
-                        "status": "New",
-                        "mcuser": f"{self.mcusername}",
-                        "subj": f"{self.subject}",
-                        "desc": f"{self.description}",
-                        "epoch": f"{epoch}"
-                        }
-            ticketlog[f"{ticket_id}"] = new_ticket_info
-            #Write to tickets json
-            with open('tickets.json','w') as ticketfile:
-                json.dump(ticketlog,ticketfile,indent=4)
+            BotHelpers.create_ticket(thread_id=thread.id,user_id=interaction.user.id,mcuser=self.mcusername,subj=self.subject,desc=self.description,ticket_id=ticket_id)
 
             #Attach info & invite user to the thread
             from ticket import ticket_close_view

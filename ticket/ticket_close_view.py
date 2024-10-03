@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from ..bot import Bot
 
 import discord.ui as ui  #for UI elements
+from helpers.bothelpers import BotHelpers #My own helpers
 import json #Needed to access the ticket log
 
 class TicketCloseView(ui.View):
@@ -16,18 +17,9 @@ class TicketCloseView(ui.View):
     async def close_ticket_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         try:    
             await interaction.response.defer(thinking=False)
-            await interaction.channel.typing()        
-            #Load ticket json
-            with open('tickets.json','r') as ticketfile:
-                ticketlog = json.load(ticketfile)
-            #change status in the JSON
-            for ticket in ticketlog:
-                threadid = ticketlog[ticket]["thread_id"]
-                if int(threadid) == interaction.channel.id:
-                    ticketlog[f"{ticket}"]["status"] = "Closed"
-            #write to ticket
-            with open('tickets.json','w') as ticketfile:
-                json.dump(ticketlog,ticketfile,indent=4)
+            await interaction.channel.typing()
+
+            BotHelpers.update_ticket_status(thread_id=interaction.channel.id,new_status="Closed")
             
             #close and lock the thread
             byembed = discord.Embed(title="",

@@ -23,19 +23,7 @@ class CreateSuggestionModal(ui.Modal, title='Suggestion'):
             await interaction.response.defer(ephemeral=True,thinking=False)
 
             #Pull the current suggestion count, increment by 1.
-            with open('config.json','r') as file:
-                config = json.load(file)
-            for channel in config["channels"]:
-                if config["channels"][f"{channel}"]["id"] == f"{interaction.channel_id}":
-                    channel_count = int(config["channels"][f"{channel}"]["count"])
-                    try:
-                        channel_letter = config["channels"][f"{channel}"]["letter"]
-                    except:
-                        channel_letter = ""
-                    config["channels"][f"{channel}"]["count"] = f"{channel_count + 1}"
-            with open('config.json','w') as file:
-                json.dump(config,file,indent=4)
-            suggestion_id = f"{channel_letter}{channel_count}"
+            suggestion_id = BotHelpers.channel_increment(interaction.channel.id)
             suggestion_log_channel = await self.bot.fetch_channel(f"{interaction.channel_id}")
             
             #Creation of the suggestion embed, and sending the message
